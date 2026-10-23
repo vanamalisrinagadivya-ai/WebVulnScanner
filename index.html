@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0B1020">
+    <title>SecureScan | Web Security Scanner</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+            <a class="brand" href="{{ url_for('dashboard') }}" aria-label="SecureScan home">
+                <span class="brand-mark" aria-hidden="true">
+                    <svg viewBox="0 0 32 32" focusable="false">
+                        <path d="M16 3 27 7v8c0 7-4.6 11.8-11 14C9.6 26.8 5 22 5 15V7l11-4Z"></path>
+                        <path d="m11.5 16 3 3 6.5-7"></path>
+                    </svg>
+                </span>
+                <span class="brand-name">Secure<span>Scan</span></span>
+            </a>
+
+            <p class="nav-label">WORKSPACE</p>
+            <nav class="nav-links">
+                <a class="nav-link active" href="#scanner" aria-current="page">
+                    <span class="nav-icon" aria-hidden="true">▦</span>
+                    <span>Scanner</span>
+                </a>
+                <a class="nav-link" href="#results">
+                    <span class="nav-icon" aria-hidden="true">◇</span>
+                    <span>Findings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-note">
+                <span class="note-indicator" aria-hidden="true"></span>
+                <p>Scan only systems you own or are explicitly authorized to test.</p>
+            </div>
+            <div class="sidebar-footer">
+                <span class="footer-mark" aria-hidden="true">S</span>
+                <span>SecureScan <span class="version">EDUCATIONAL</span></span>
+            </div>
+        </aside>
+
+        <div class="main-column">
+            <header class="topbar">
+                <button class="menu-toggle" id="menu-toggle" type="button"
+                        aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false">
+                    <span></span><span></span><span></span>
+                </button>
+                <div class="breadcrumb"><span>Workspace</span><span aria-hidden="true">/</span><strong>Scanner</strong></div>
+                <div class="service-status">
+                    <span class="status-dot{% if not scan_enabled %} status-dot-disabled{% endif %}" aria-hidden="true"></span>
+                    <span>{% if scan_enabled %}Scanner ready{% else %}Allowlist required{% endif %}</span>
+                </div>
+            </header>
+
+            <main id="scanner">
+                <section class="page-heading" aria-labelledby="page-title">
+                    <div>
+                        <p class="eyebrow">SECURITY OPERATIONS</p>
+                        <h1 id="page-title">Web Security Scanner</h1>
+                        <p class="page-subtitle">Run a focused assessment and review the results in one place.</p>
+                    </div>
+                    <span class="local-badge"><span aria-hidden="true">⌖</span> Allowlisted targets only</span>
+                </section>
+
+                <section class="panel scan-panel" aria-labelledby="scan-title">
+                    <div class="panel-heading">
+                        <div>
+                            <div class="section-icon cyan-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" focusable="false"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4M8.5 11h5M11 8.5v5"></path></svg>
+                            </div>
+                            <div>
+                                <h2 id="scan-title">Start a security scan</h2>
+                                <p>Enter an allowlisted site to begin. Scan requests run synchronously.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if not scan_enabled %}
+                    <div class="configuration-alert" role="alert">
+                        <span class="configuration-alert-icon" aria-hidden="true">!</span>
+                        <div>
+                            <strong>Scanning is disabled: the host allowlist is missing or invalid.</strong>
+                            <p>In Windows PowerShell, set an authorized host and restart SecureScan in that same window:</p>
+                            <code>$env:SECURESCAN_ALLOWED_HOSTS = "your-authorized-host.example:8000"</code>
+                            <p>Use a hostname you own or have permission to test. Separate entries with commas; use <code>*.staging.yourdomain.com</code> only if you intend to allow its subdomains.</p>
+                            <p>For the controlled local test page, allow only <code>127.0.0.1:8000</code> and set <code>$env:SECURESCAN_ALLOW_LOOPBACK_TARGETS = "1"</code>.</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <form id="scan-form" novalidate>
+                        <div class="field-group">
+                            <label for="target-url">Target URL</label>
+                            <div class="input-wrap">
+                                <span class="input-icon" aria-hidden="true">↗</span>
+                                <input id="target-url" name="url" type="url" inputmode="url"
+                                       placeholder="https://authorized.example.com"
+                                       autocomplete="url" aria-describedby="target-help target-error"
+                                       required>
+                            </div>
+                            <p class="field-help" id="target-help">Hosts and ports must match the server allowlist. Local and private IP addresses are blocked.</p>
+                            <p class="field-error" id="target-error" role="alert" hidden></p>
+                        </div>
+                        <div class="scan-actions">
+                            <label class="consent-label">
+                                <input id="authorization" name="authorized" type="checkbox" required>
+                                <span>I own this system or have explicit authorization to test it.</span>
+                            </label>
+                            <button class="primary-button" id="scan-button" type="submit">
+                                <span class="button-spinner" aria-hidden="true"></span>
+                                <span class="button-label">Scan website</span>
+                                <span class="button-arrow" aria-hidden="true">→</span>
+                            </button>
+                        </div>
+                    </form>
+                </section>
+
+                <section class="config-row" aria-labelledby="config-title">
+                    <div class="config-heading">
+                        <div class="config-icon" aria-hidden="true">⚙</div>
+                        <div>
+                            <h2 id="config-title">Scan configuration</h2>
+                            <p>Existing scanner limits and checks</p>
+                        </div>
+                    </div>
+                    <div class="config-items">
+                        <div class="config-item"><span class="config-value">10</span><span class="config-label">Max pages</span></div>
+                        <div class="config-divider" aria-hidden="true"></div>
+                        <div class="config-item"><span class="config-value">5s</span><span class="config-label">Request timeout</span></div>
+                        <div class="config-divider" aria-hidden="true"></div>
+                        <div class="config-item"><span class="config-value">7</span><span class="config-label">Check areas</span></div>
+                    </div>
+                </section>
+
+                <section class="results-section" id="results" aria-labelledby="results-title">
+                    <div class="results-heading">
+                        <div>
+                            <p class="eyebrow">ASSESSMENT OVERVIEW</p>
+                            <h2 id="results-title">Scan results</h2>
+                        </div>
+                        <p class="results-caption" id="results-caption">No scan has been run yet.</p>
+                    </div>
+
+                    <section class="panel scan-summary-panel" id="scan-summary-panel" hidden aria-label="Latest scan details">
+                        <div class="scan-summary-item scan-target-item">
+                            <span class="scan-summary-label">Target URL</span>
+                            <strong id="result-target">—</strong>
+                        </div>
+                        <div class="scan-summary-item">
+                            <span class="scan-summary-label">Scan status</span>
+                            <span class="scan-status-badge" id="result-status">—</span>
+                        </div>
+                        <p class="scan-error" id="result-error" role="alert" hidden></p>
+                    </section>
+
+                    <div class="summary-grid" aria-label="Scan summary">
+                        <article class="summary-card">
+                            <div class="summary-top"><span>Pages scanned</span><span class="summary-icon blue-icon" aria-hidden="true">▤</span></div>
+                            <strong id="pages-value">—</strong>
+                            <span class="summary-foot">Pages reached during crawl</span>
+                        </article>
+                        <article class="summary-card">
+                            <div class="summary-top"><span>Findings</span><span class="summary-icon red-icon" aria-hidden="true">⌁</span></div>
+                            <strong id="findings-value">—</strong>
+                            <span class="summary-foot">Potential issues reported</span>
+                        </article>
+                        <article class="summary-card">
+                            <div class="summary-top"><span>Finding categories</span><span class="summary-icon amber-icon" aria-hidden="true">◇</span></div>
+                            <strong id="categories-value">—</strong>
+                            <span class="summary-foot">Distinct categories reported</span>
+                        </article>
+                        <article class="summary-card">
+                            <div class="summary-top"><span>Low severity</span><span class="summary-icon green-icon" aria-hidden="true">!</span></div>
+                            <strong id="warnings-value">—</strong>
+                            <span class="summary-foot">Low-severity returned findings</span>
+                        </article>
+                    </div>
+
+                    <section class="panel findings-panel" aria-labelledby="findings-title">
+                        <div class="findings-header">
+                            <div>
+                                <h3 id="findings-title">Findings</h3>
+                                <p id="findings-subtitle">Results from the latest scan will appear here.</p>
+                            </div>
+                            <span class="finding-count" id="finding-count">—</span>
+                        </div>
+                        <div class="findings-controls" id="findings-controls" hidden>
+                            <label class="search-field" for="finding-search">
+                                <span aria-hidden="true">⌕</span>
+                                <input id="finding-search" type="search" placeholder="Search findings" autocomplete="off">
+                            </label>
+                            <label class="filter-field" for="severity-filter">
+                                <span>Severity</span>
+                                <select id="severity-filter">
+                                    <option value="">All severities</option>
+                                </select>
+                            </label>
+                        </div>
+                        <div class="scan-state" id="scan-state" role="status" aria-live="polite">
+                            <span class="state-icon empty-icon" aria-hidden="true">⌕</span>
+                            <h4>Ready when you are</h4>
+                            <p>Submit an authorized, allowlisted target to see scan results.</p>
+                        </div>
+                        <div class="table-wrap" id="findings-table-wrap" hidden>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col" aria-sort="none"><button class="sort-button" type="button" data-sort="severity">Severity <span aria-hidden="true"></span></button></th>
+                                        <th scope="col" aria-sort="none"><button class="sort-button" type="button" data-sort="category">Category <span aria-hidden="true"></span></button></th>
+                                        <th scope="col" aria-sort="none"><button class="sort-button" type="button" data-sort="affected_url">Affected URL <span aria-hidden="true"></span></button></th>
+                                        <th scope="col" aria-sort="none"><button class="sort-button" type="button" data-sort="description">Technical explanation <span aria-hidden="true"></span></button></th>
+                                        <th scope="col">Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="findings-body"></tbody>
+                            </table>
+                        </div>
+                        <p class="filter-empty" id="filter-empty" hidden>No findings match the current search and severity filter.</p>
+                    </section>
+
+                    <section class="panel discovered-panel" id="headers-panel" hidden aria-labelledby="headers-title">
+                        <div class="findings-header">
+                            <div>
+                                <h3 id="headers-title">Security headers</h3>
+                                <p>Observed security header values from the target's HTTP response.</p>
+                            </div>
+                        </div>
+                        <div class="header-results-wrap">
+                            <table class="header-results-table">
+                                <thead>
+                                    <tr><th scope="col">Header</th><th scope="col">Observed result</th><th scope="col">Value</th></tr>
+                                </thead>
+                                <tbody id="headers-body"></tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <section class="panel discovered-panel" id="robots-panel" hidden aria-labelledby="robots-title">
+                        <div class="findings-header">
+                            <div>
+                                <h3 id="robots-title">robots.txt paths</h3>
+                                <p>Allow and Disallow paths observed during the scan.</p>
+                            </div>
+                        </div>
+                        <ul class="robots-list" id="robots-list"></ul>
+                    </section>
+                </section>
+
+                <footer class="page-footer">
+                    <span>SecureScan <span aria-hidden="true">·</span> Educational scanner</span>
+                    <span>Only scan systems you own or are authorized to assess.</span>
+                </footer>
+            </main>
+        </div>
+    </div>
+    <div class="mobile-overlay" id="mobile-overlay" hidden></div>
+</body>
+</html>
