@@ -177,4 +177,3 @@ Press `Ctrl+C` in each terminal running a server.
 ### ⚠️ Security Notice
 
 SecureScan is an educational web vulnerability scanner. Use it only on systems you own or are explicitly authorized to assess. It is not a replacement for professional security testing.
-i want to all the files 
